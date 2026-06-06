@@ -61,7 +61,20 @@ RetroArch Android (phoenix)  --gradlew-->  APK  <----------┘  (core + ROM + ic
 ## Status
 
 - [x] Brick 1 — FBNeo core `.so` (arm64-v8a) builds and is validated (widescreen baked in)
-- [ ] Brick 2 — RetroArch APK builds (toolchain install in progress)
-- [ ] Embed core + ROM + custom icon
-- [ ] Auto-boot single game patch
-- [ ] Final standalone APK
+- [x] Brick 2 — RetroArch APK builds (vanilla validated end-to-end, `BUILD SUCCESSFUL`)
+- [x] Embed core (jniLib) + ROM (asset) — APK = 45 MB, arm64-v8a only
+- [x] Auto-boot single game patch (`MainMenuActivity.finalStartup`)
+- [ ] Custom icon
+- [ ] On-device validation (auto-boot + widescreen)
+
+Candidate APK: `out/SFA3-Widescreen.apk`
+
+## How it works (auto-boot)
+
+1. Core shipped as a **jniLib** `lib/arm64-v8a/libfbneo_libretro_android.so`
+   → Android extracts it to `nativeLibraryDir` (manifest `extractNativeLibs="true"`).
+2. ROM shipped as **asset** `assets/sfa3.zip` → copied to `filesDir/sfa3.zip` on
+   first launch by `prepareBundledRom()`.
+3. `MainMenuActivity.finalStartup()` launches `RetroActivityFuture` with
+   `LIBRETRO` = the jniLib path and `ROM` = the extracted zip → boots straight
+   into the game, no picker.

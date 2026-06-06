@@ -1,5 +1,5 @@
 diff --git a/pkg/android/phoenix/build.gradle b/pkg/android/phoenix/build.gradle
-index 03168ab..ac78368 100644
+index 03168ab..76a181a 100644
 --- a/pkg/android/phoenix/build.gradle
 +++ b/pkg/android/phoenix/build.gradle
 @@ -1,6 +1,7 @@
@@ -18,3 +18,19 @@ index 03168ab..ac78368 100644
          jcenter()
      }
  
+@@ -52,12 +54,13 @@ android {
+     }
+     aarch64 {
+       applicationIdSuffix '.aarch64'
+-      resValue "string", "app_name", "RetroArch (AArch64)"
++      resValue "string", "app_name", "SFA3 Widescreen"
+       buildConfigField "boolean", "PLAY_STORE_BUILD", "false"
+ 
+       dimension "variant"
+       ndk {
+-        abiFilters 'arm64-v8a', 'x86_64'
++        // Richard: arm64 uniquement (notre core widescreen est arm64-v8a).
++        abiFilters 'arm64-v8a'
+       }
+     }
+     ra32 {

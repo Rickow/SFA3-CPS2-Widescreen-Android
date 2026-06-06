@@ -1,0 +1,56 @@
+diff --git a/pkg/android/phoenix/src/com/retroarch/browser/mainmenu/MainMenuActivity.java b/pkg/android/phoenix/src/com/retroarch/browser/mainmenu/MainMenuActivity.java
+index 35eaac8..d18df41 100644
+--- a/pkg/android/phoenix/src/com/retroarch/browser/mainmenu/MainMenuActivity.java
++++ b/pkg/android/phoenix/src/com/retroarch/browser/mainmenu/MainMenuActivity.java
+@@ -31,6 +31,30 @@ public final class MainMenuActivity extends PreferenceActivity
+ 	public static String PACKAGE_NAME;
+ 	boolean checkPermissions = false;
+ 
++	// Richard: AUTO-BOOT single game (SFA3 widescreen).
++	final private static String BUNDLED_CORE = "libfbneo_libretro_android.so"; // jniLib name
++	final private static String BUNDLED_ROM  = "sfa3.zip";                      // asset name
++
++	// Copie la ROM bundled (assets/) vers filesDir au 1er lancement, renvoie son chemin.
++	private String prepareBundledRom()
++	{
++		java.io.File outFile = new java.io.File(getFilesDir(), BUNDLED_ROM);
++		if (!outFile.exists() || outFile.length() == 0) {
++			try {
++				java.io.InputStream in = getAssets().open(BUNDLED_ROM);
++				java.io.OutputStream out = new java.io.FileOutputStream(outFile);
++				byte[] buf = new byte[65536];
++				int n;
++				while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
++				out.close();
++				in.close();
++			} catch (java.io.IOException e) {
++				Log.e("MainMenuActivity", "Failed to extract bundled ROM", e);
++			}
++		}
++		return outFile.getAbsolutePath();
++	}
++
+ 	public void showMessageOKCancel(String message, DialogInterface.OnClickListener onClickListener)
+ 	{
+ 		new AlertDialog.Builder(this).setMessage(message)
+@@ -124,12 +148,17 @@ public final class MainMenuActivity extends PreferenceActivity
+ 		} else {
+ 			// RetroActivity not running - full setup with parameters
+ 			retro.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+-			final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
++
++			// Richard: AUTO-BOOT single game. Notre core widescreen est livre en
++			// jniLib (extrait par Android dans nativeLibraryDir) et la ROM est
++			// bundled dans assets/ puis copiee dans filesDir au 1er lancement.
++			String corePath = getApplicationInfo().nativeLibraryDir + "/" + BUNDLED_CORE;
++			String romPath  = prepareBundledRom();
+ 
+ 			startRetroActivity(
+ 					retro,
+-					null,
+-					prefs.getString("libretro_path", getApplicationInfo().dataDir + "/cores/"),
++					romPath,
++					corePath,
+ 					UserPreferences.getDefaultConfigPath(this),
+ 					Settings.Secure.getString(getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD),
+ 					getApplicationInfo().dataDir,

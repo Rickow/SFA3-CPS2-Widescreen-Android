@@ -109,11 +109,16 @@ def main():
     psd = os.path.join(outdir, "%s.psd" % prefix)
     write_psd(psd, W, H, layers)
 
-    # flattened preview
+    # flattened preview (native pixels, non-square -> sun looks flattened)
     base = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     for _, px in reversed(layers):
         base = Image.alpha_composite(base, Image.frombytes("RGBA", (W, H), px))
     base.save(os.path.join(outdir, "%s_preview.png" % prefix))
+
+    # aspect-corrected preview (CPS2 PAR ~0.778: compress width -> round sun).
+    # Only for visual check; the PSD/layers stay NATIVE for re-import.
+    cw = round(W * 0.7777)
+    base.resize((cw, H), Image.LANCZOS).save(os.path.join(outdir, "%s_preview_43.png" % prefix))
 
     print("OK %s  (%dx%d, 3 layers)" % (psd, W, H))
     return 0

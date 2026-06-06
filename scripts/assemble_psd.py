@@ -98,11 +98,13 @@ def main():
     assert len(sizes) == 1, "layers have different sizes: %s" % sizes
     W, H = sizes.pop()
 
-    # top -> bottom : Scroll1 (proche/texte), Scroll2 (median), Scroll3 (fond)
+    # top -> bottom. NB: la profondeur CPS2 varie par stage (priorites par tile).
+    # Pour SFA3 (stage coucher de soleil valide), Scroll1 = ciel (FOND),
+    # Scroll3 = rochers/bonsai (AVANT). Ordre ajustable dans Photoshop.
     layers = [
-        ("Scroll1 (proche)", imgs[1]),
+        ("Scroll3 (avant)",  imgs[3]),
         ("Scroll2 (median)", imgs[2]),
-        ("Scroll3 (fond)",   imgs[3]),
+        ("Scroll1 (fond)",   imgs[1]),
     ]
     psd = os.path.join(outdir, "%s.psd" % prefix)
     write_psd(psd, W, H, layers)

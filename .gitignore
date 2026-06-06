@@ -17,3 +17,8 @@ local.properties
 # OS
 Thumbs.db
 .DS_Store
+
+# Stage extraction outputs (regenerables)
+out_stages/
+*.bin
+icone.png

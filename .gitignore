@@ -1,0 +1,19 @@
+# Build outputs
+*.apk
+*.so
+*.o
+*.elf
+obj/
+libs/
+build/
+.gradle/
+
+# Local config
+local.properties
+
+# Downloads / toolchain archives
+*.zip
+
+# OS
+Thumbs.db
+.DS_Store

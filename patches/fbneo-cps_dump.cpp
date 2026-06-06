@@ -92,9 +92,9 @@ extern "C" INT32 CpsDumpScroll3(const char* filename) { return DumpLayer(filenam
 // Canevas elargi (DUMP_MARGIN_X de chaque cote) pour voir/peindre les zones 16:9.
 // ------------------------------------------------------------------------
 #define DUMP_OUT_W     640
-#define DUMP_OUT_H     224
+#define DUMP_OUT_H     384   // > 224 ecran : capture le decor revele au SAUT (scroll vertical)
 #define DUMP_MARGIN_X  128   // x ecran couvert : [-128 .. 512)
-#define DUMP_MARGIN_Y  0
+#define DUMP_MARGIN_Y  128   // y ecran couvert : [-128 .. 256) -> 128px au-dessus de l'ecran
 
 static INT32 DumpLayerScreen(const char* filename, int layer)
 {

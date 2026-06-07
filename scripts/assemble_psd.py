@@ -114,26 +114,42 @@ def main():
     for _, px in reversed(decor):
         base = Image.alpha_composite(base, Image.frombytes("RGBA", (W, H), px))
 
-    # --- reperes 4:3 / 16:9 + zones a combler ---
-    ex = (WIDE_W - SCR_W) // 2                       # marge widescreen par cote (32)
-    s = (MARGIN_X, MARGIN_Y, MARGIN_X + SCR_W, MARGIN_Y + SCR_H)        # cadre 4:3
-    w_ = (MARGIN_X - ex, MARGIN_Y, MARGIN_X - ex + WIDE_W, MARGIN_Y + SCR_H)  # cadre 16:9
+    # --- geometrie depuis le .meta du dumper (placement EXACT des reperes) ---
+    meta = {}
+    mp = os.path.join(indir, "%s.meta" % prefix)
+    if os.path.exists(mp):
+        for line in open(mp):
+            p = line.split()
+            if len(p) == 2:
+                try: meta[p[0]] = int(p[1])
+                except ValueError: pass
+    mx = meta.get("margin_x", (W - 448) // 2)   # canvas x de la colonne 0 du rendu
+    my = meta.get("margin_y", (H - 224) // 2)
+    sw = meta.get("screen_w", 448)              # largeur AVEC patch (rendu courant)
+    sh = meta.get("screen_h", 224)
+    gx = meta.get("gx", (sw - SCR_W) // 2)      # offset du natif dans le rendu
+    gy = meta.get("gy", (sh - SCR_H) // 2)
+    nw = meta.get("native_w", SCR_W)            # 384 (sans patch)
+    nh = meta.get("native_h", SCR_H)            # 224
 
-    # "A combler" : rouge la ou c'est transparent DANS la cible 16:9
+    nat = (mx + gx, my + gy, mx + gx + nw, my + gy + nh)   # viewport SANS patch
+    pat = (mx, my, mx + sw, my + sh)                       # viewport AVEC patch
+
+    # "A combler" : rouge la ou c'est transparent DANS le viewport AVEC patch
     fill = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     bp, fp = base.load(), fill.load()
-    for y in range(max(0, w_[1]), min(H, w_[3])):
-        for x in range(max(0, w_[0]), min(W, w_[2])):
+    for y in range(max(0, pat[1]), min(H, pat[3])):
+        for x in range(max(0, pat[0]), min(W, pat[2])):
             if bp[x, y][3] == 0:
                 fp[x, y] = (255, 0, 0, 90)
 
     # Reperes : cadres + libelles
     guides = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(guides)
-    d.rectangle([s[0], s[1], s[2] - 1, s[3] - 1], outline=(255, 255, 255, 255), width=1)
-    d.rectangle([w_[0], w_[1], w_[2] - 1, w_[3] - 1], outline=(0, 255, 255, 255), width=2)
-    d.text((s[0] + 3, s[1] + 3), "4:3 384x224", fill=(255, 255, 255, 255))
-    d.text((w_[0] + 3, w_[3] - 12), "16:9 448x224", fill=(0, 255, 255, 255))
+    d.rectangle([nat[0], nat[1], nat[2] - 1, nat[3] - 1], outline=(255, 255, 255, 255), width=1)
+    d.rectangle([pat[0], pat[1], pat[2] - 1, pat[3] - 1], outline=(0, 255, 255, 255), width=2)
+    d.text((nat[0] + 3, nat[1] + 3), "sans patch %dx%d" % (nw, nh), fill=(255, 255, 255, 255))
+    d.text((pat[0] + 3, pat[3] - 12), "avec patch %dx%d" % (sw, sh), fill=(0, 255, 255, 255))
 
     # --- PSD : reperes + a combler au-dessus du decor ---
     layers = [("Reperes 4:3 / 16:9", guides.tobytes()),

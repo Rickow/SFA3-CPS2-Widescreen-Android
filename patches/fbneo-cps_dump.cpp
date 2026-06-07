@@ -91,14 +91,19 @@ extern "C" INT32 CpsDumpScroll3(const char* filename) { return DumpLayer(filenam
 // transparent. Sortie RGBA brute : header "RGBA <W> <H>\n" puis W*H*4 octets.
 // Canevas elargi (DUMP_MARGIN_X de chaque cote) pour voir/peindre les zones 16:9.
 // ------------------------------------------------------------------------
-#define DUMP_OUT_W     640
-#define DUMP_OUT_H     384   // > 224 ecran : capture le decor revele au SAUT (scroll vertical)
-#define DUMP_MARGIN_X  128   // x ecran couvert : [-128 .. 512)
-#define DUMP_MARGIN_Y  128   // y ecran couvert : [-128 .. 256) -> 128px au-dessus de l'ecran
+// Canevas LARGE pour capturer toute la zone dispo hors-ecran (gauche+droite+haut+bas).
+// Le rendu courant (nCpsScreenWidth x nCpsScreenHeight, ex 448x224 avec patch widescreen)
+// est CENTRE dans le canevas -> marges symetriques = decor hors-ecran de chaque cote.
+#define DUMP_OUT_W     768
+#define DUMP_OUT_H     448
 
 static INT32 DumpLayerScreen(const char* filename, int layer)
 {
 	if (CpsSaveReg[0] == NULL || CpsGfx == NULL) return 1;
+
+	// Marges = centre le rendu courant dans le canevas (sx=0 = colonne 0 du rendu).
+	const int marginX = (DUMP_OUT_W - nCpsScreenWidth)  / 2;
+	const int marginY = (DUMP_OUT_H - nCpsScreenHeight) / 2;
 
 	int regOff, regX, regY, tileShift, palBase, TS, scrollIdx, Wpx, Hpx, lXo, lYo;
 	switch (layer) {
@@ -126,12 +131,12 @@ static INT32 DumpLayerScreen(const char* filename, int layer)
 	const int maskX = Wpx - 1, maskY = Hpx - 1;
 
 	for (int oy = 0; oy < DUMP_OUT_H; oy++) {
-		int sy  = oy - DUMP_MARGIN_Y;
+		int sy  = oy - marginY;
 		int tmy = (nScrY + sy) & maskY;
 		int fy  = tmy / TS;
 		int inTy = tmy & (TS - 1);
 		for (int ox = 0; ox < DUMP_OUT_W; ox++) {
-			int sx  = ox - DUMP_MARGIN_X;
+			int sx  = ox - marginX;
 			int tmx = (nScrX + sx) & maskX;
 			int fx  = tmx / TS;
 			int inTx = tmx & (TS - 1);
@@ -180,6 +185,20 @@ extern "C" INT32 CpsDumpStageLayers()
 	snprintf(fn, sizeof(fn), "stage%02d_scroll1.bin", stageIdx); INT32 r1 = DumpLayerScreen(fn, 1);
 	snprintf(fn, sizeof(fn), "stage%02d_scroll2.bin", stageIdx); INT32 r2 = DumpLayerScreen(fn, 2);
 	snprintf(fn, sizeof(fn), "stage%02d_scroll3.bin", stageIdx); INT32 r3 = DumpLayerScreen(fn, 3);
+
+	// Metadata geometrie : permet a l'assembleur de placer EXACTEMENT les reperes
+	// "sans patch" (384x224 natif) et "avec patch" (rendu courant nCpsScreenWidth).
+	snprintf(fn, sizeof(fn), "stage%02d.meta", stageIdx);
+	FILE* m = fopen(fn, "w");
+	if (m) {
+		int marginX = (DUMP_OUT_W - nCpsScreenWidth)  / 2;
+		int marginY = (DUMP_OUT_H - nCpsScreenHeight) / 2;
+		fprintf(m, "out_w %d\nout_h %d\nmargin_x %d\nmargin_y %d\n"
+		           "screen_w %d\nscreen_h %d\ngx %d\ngy %d\nnative_w 384\nnative_h 224\n",
+		        DUMP_OUT_W, DUMP_OUT_H, marginX, marginY,
+		        nCpsScreenWidth, nCpsScreenHeight, nCpsGlobalXOffset, nCpsGlobalYOffset);
+		fclose(m);
+	}
 	stageIdx++;
 	return (r1 || r2 || r3) ? 1 : 0;
 }

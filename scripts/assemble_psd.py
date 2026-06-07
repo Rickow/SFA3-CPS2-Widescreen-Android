@@ -11,7 +11,12 @@
 #   e.g. python assemble_psd.py stage00 "E:/CLAUDE CODE/fbneo-libretro" "./out_stages"
 
 import sys, os, struct
-from PIL import Image
+from PIL import Image, ImageDraw
+
+# Geometrie de capture (doit matcher cps_dump.cpp)
+MARGIN_X, MARGIN_Y = 128, 128     # decalage ecran(0,0) dans le canevas
+SCR_W, SCR_H       = 384, 224     # ecran 4:3 d'origine
+WIDE_W             = 448          # cible widescreen 16:9 (meme hauteur)
 
 def read_rgba(path):
     with open(path, "rb") as f:
@@ -98,29 +103,53 @@ def main():
     assert len(sizes) == 1, "layers have different sizes: %s" % sizes
     W, H = sizes.pop()
 
-    # top -> bottom. NB: la profondeur CPS2 varie par stage (priorites par tile).
-    # Pour SFA3 (stage coucher de soleil valide), Scroll1 = ciel (FOND),
-    # Scroll3 = rochers/bonsai (AVANT). Ordre ajustable dans Photoshop.
-    layers = [
+    # --- decor (top -> bottom). NB: la profondeur CPS2 varie par stage. ---
+    decor = [
         ("Scroll3 (avant)",  imgs[3]),
         ("Scroll2 (median)", imgs[2]),
         ("Scroll1 (fond)",   imgs[1]),
     ]
+    # composite decor seul (pour detecter les trous transparents)
+    base = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    for _, px in reversed(decor):
+        base = Image.alpha_composite(base, Image.frombytes("RGBA", (W, H), px))
+
+    # --- reperes 4:3 / 16:9 + zones a combler ---
+    ex = (WIDE_W - SCR_W) // 2                       # marge widescreen par cote (32)
+    s = (MARGIN_X, MARGIN_Y, MARGIN_X + SCR_W, MARGIN_Y + SCR_H)        # cadre 4:3
+    w_ = (MARGIN_X - ex, MARGIN_Y, MARGIN_X - ex + WIDE_W, MARGIN_Y + SCR_H)  # cadre 16:9
+
+    # "A combler" : rouge la ou c'est transparent DANS la cible 16:9
+    fill = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    bp, fp = base.load(), fill.load()
+    for y in range(max(0, w_[1]), min(H, w_[3])):
+        for x in range(max(0, w_[0]), min(W, w_[2])):
+            if bp[x, y][3] == 0:
+                fp[x, y] = (255, 0, 0, 90)
+
+    # Reperes : cadres + libelles
+    guides = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(guides)
+    d.rectangle([s[0], s[1], s[2] - 1, s[3] - 1], outline=(255, 255, 255, 255), width=1)
+    d.rectangle([w_[0], w_[1], w_[2] - 1, w_[3] - 1], outline=(0, 255, 255, 255), width=2)
+    d.text((s[0] + 3, s[1] + 3), "4:3 384x224", fill=(255, 255, 255, 255))
+    d.text((w_[0] + 3, w_[3] - 12), "16:9 448x224", fill=(0, 255, 255, 255))
+
+    # --- PSD : reperes + a combler au-dessus du decor ---
+    layers = [("Reperes 4:3 / 16:9", guides.tobytes()),
+              ("A combler (16:9)",   fill.tobytes())] + decor
     psd = os.path.join(outdir, "%s.psd" % prefix)
     write_psd(psd, W, H, layers)
 
-    # flattened preview (native pixels, non-square -> sun looks flattened)
-    base = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    for _, px in reversed(layers):
-        base = Image.alpha_composite(base, Image.frombytes("RGBA", (W, H), px))
-    base.save(os.path.join(outdir, "%s_preview.png" % prefix))
-
-    # aspect-corrected preview (CPS2 PAR ~0.778: compress width -> round sun).
-    # Only for visual check; the PSD/layers stay NATIVE for re-import.
-    cw = round(W * 0.7777)
+    # --- apercus ---
+    base.save(os.path.join(outdir, "%s_preview.png" % prefix))                 # decor seul
+    annot = Image.alpha_composite(Image.alpha_composite(base, fill), guides)
+    annot.save(os.path.join(outdir, "%s_preview_zones.png" % prefix))          # avec reperes
+    cw = round(W * 0.7777)  # PAR CPS2 ~0.778 -> pixels carres (apercu rond)
     base.resize((cw, H), Image.LANCZOS).save(os.path.join(outdir, "%s_preview_43.png" % prefix))
+    annot.resize((cw, H), Image.LANCZOS).save(os.path.join(outdir, "%s_preview_zones_43.png" % prefix))
 
-    print("OK %s  (%dx%d, 3 layers)" % (psd, W, H))
+    print("OK %s  (%dx%d, %d layers + reperes)" % (psd, W, H, len(decor)))
     return 0
 
 if __name__ == "__main__":

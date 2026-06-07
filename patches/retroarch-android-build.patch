@@ -1,5 +1,5 @@
 diff --git a/pkg/android/phoenix/build.gradle b/pkg/android/phoenix/build.gradle
-index 03168ab..fb8cf90 100644
+index 03168ab..a3d5542 100644
 --- a/pkg/android/phoenix/build.gradle
 +++ b/pkg/android/phoenix/build.gradle
 @@ -1,6 +1,7 @@
@@ -18,7 +18,7 @@ index 03168ab..fb8cf90 100644
          jcenter()
      }
  
-@@ -51,13 +53,17 @@ android {
+@@ -51,13 +53,18 @@ android {
        dimension "variant"
      }
      aarch64 {
@@ -27,8 +27,9 @@ index 03168ab..fb8cf90 100644
 +      // Richard: applicationId UNIQUE pour s'installer A COTE de RetroArch
 +      // officiel (com.retroarch.aarch64) sans proposer une mise a jour.
 +      // NB: on garde le package de code com.retroarch (manifest) -> JNI natif intact.
-+      applicationId "com.sfa3.widescreen"
-+      resValue "string", "app_name", "SFA3 Widescreen"
++      // Parametrable (-PAPP_ID / -PAPP_NAME) pour produire des variantes (ex 3:2).
++      applicationId project.hasProperty('APP_ID')   ? APP_ID   : "com.sfa3.widescreen"
++      resValue "string", "app_name", project.hasProperty('APP_NAME') ? APP_NAME : "SFA3 Widescreen"
        buildConfigField "boolean", "PLAY_STORE_BUILD", "false"
  
        dimension "variant"

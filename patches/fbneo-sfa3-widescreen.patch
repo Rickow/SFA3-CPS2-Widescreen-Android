@@ -1,29 +1,37 @@
 diff --git a/src/burn/drv/capcom/d_cps2.cpp b/src/burn/drv/capcom/d_cps2.cpp
-index 2a0bf1f..34c248a 100644
+index 2a0bf1f..c11e153 100644
 --- a/src/burn/drv/capcom/d_cps2.cpp
 +++ b/src/burn/drv/capcom/d_cps2.cpp
-@@ -11933,6 +11933,11 @@ struct BurnDriver BurnDrvCpsSfz2adl = {
+@@ -11933,6 +11933,19 @@ struct BurnDriver BurnDrvCpsSfz2adl = {
  	&CpsRecalcPal, 0x1000, 384, 224, 4, 3
  };
  
 +// Street Fighter Alpha 3 - build WIDESCREEN dedie (Richard).
-+// Le driver sfa3 STANDARD est passe en 448x224 / 16:9 : on charge sfa3.zip normal
++// Le driver sfa3 STANDARD est passe en widescreen : on charge sfa3.zip normal
 +// (pas de renommage) et notre FBNeo l'affiche direct en widescreen. Le decor existe
-+// deja dans la tilemap au-dela de 384px -> aucun patch ROM. 448 = largeur retenue
-+// (teste 416/448/480/496). Pour le 4:3 d'origine, utiliser un FBNeo standard.
++// deja dans la tilemap au-dela de 384px -> aucun patch ROM. Dimensions parametrables
++// a la COMPILATION pour produire plusieurs variantes (un seul code, plusieurs builds):
++//   - defaut         : 448x224 @ 16:9 (largeur retenue, teste 416/448/480/496)
++//   - variante 3:2   : -DSFA3_SCRW=432 -DSFA3_ASPX=3 -DSFA3_ASPY=2 (PAR natif, recadre)
++// Pour le 4:3 d'origine, utiliser un FBNeo standard.
++#ifndef SFA3_SCRW
++#define SFA3_SCRW 448
++#define SFA3_ASPX 16
++#define SFA3_ASPY 9
++#endif
  struct BurnDriver BurnDrvCpsSfa3 = {
  	"sfa3", NULL, NULL, NULL, "1998",
  	"Street Fighter Alpha 3 (Europe 980904)\0", NULL, "Capcom", "CPS2",
-@@ -11940,7 +11945,7 @@ struct BurnDriver BurnDrvCpsSfa3 = {
+@@ -11940,7 +11953,7 @@ struct BurnDriver BurnDrvCpsSfa3 = {
  	BDF_GAME_WORKING | BDF_HISCORE_SUPPORTED, 2, HARDWARE_CAPCOM_CPS2, GBF_VSFIGHT, FBF_SF,
  	NULL, Sfa3RomInfo, Sfa3RomName, NULL, NULL, NULL, NULL, Cps2FightingInputInfo, NULL,
  	Cps2Init, DrvExit, Cps2Frame, CpsRedraw, CpsAreaScan,
 -	&CpsRecalcPal, 0x1000, 384, 224, 4, 3
-+	&CpsRecalcPal, 0x1000, 448, 224, 16, 9
++	&CpsRecalcPal, 0x1000, SFA3_SCRW, 224, SFA3_ASPX, SFA3_ASPY
  };
  
  struct BurnDriver BurnDrvCpsSfa3b = {
-@@ -16377,7 +16382,7 @@ struct BurnDriver BurnDrvCpsMshvsfcph = {
+@@ -16377,7 +16390,7 @@ struct BurnDriver BurnDrvCpsMshvsfcph = {
  };
  
  // Pocket Fighter (Simplified Chinese plot translation, Hack)

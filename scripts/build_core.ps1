@@ -7,7 +7,10 @@
 #   - Junction E:\fbsrc -> E:\CLAUDE CODE\fbneo-libretro  (ndk-build rejects spaces)
 #     New-Item -ItemType Junction -Path E:\fbsrc -Target "E:\CLAUDE CODE\fbneo-libretro"
 
-param([string]$Abi = "arm64-v8a")
+param(
+    [string]$Abi = "arm64-v8a",
+    [string]$Defines = ""   # ex 3:2 : "-DSFA3_SCRW=432 -DSFA3_ASPX=3 -DSFA3_ASPY=2"
+)
 
 $ndk  = "E:\android-ndk-r21e"
 $proj = "E:\fbsrc\src\burner\libretro"   # space-free junction
@@ -19,11 +22,17 @@ if (-not (Test-Path $proj)) {
 }
 
 # Absolute paths are mandatory (relative -> jni/jni/.. double-prefix bug).
-& "$ndk\ndk-build.cmd" `
-    NDK_PROJECT_PATH="$proj" `
-    APP_BUILD_SCRIPT="$proj\jni\Android.mk" `
-    NDK_APPLICATION_MK="$proj\jni\Application.mk" `
-    APP_ABI=$Abi -j8
+$ndkArgs = @(
+    "NDK_PROJECT_PATH=$proj",
+    "APP_BUILD_SCRIPT=$proj\jni\Android.mk",
+    "NDK_APPLICATION_MK=$proj\jni\Application.mk",
+    "APP_ABI=$Abi", "-j8"
+)
+if ($Defines -ne "") {
+    $ndkArgs += "APP_CFLAGS=$Defines"
+    $ndkArgs += "APP_CPPFLAGS=$Defines"
+}
+& "$ndk\ndk-build.cmd" @ndkArgs
 if ($LASTEXITCODE -ne 0) { Write-Error "ndk-build failed"; exit 1 }
 
 New-Item -ItemType Directory -Force -Path $out | Out-Null

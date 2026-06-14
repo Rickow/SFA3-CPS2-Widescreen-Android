@@ -10,17 +10,23 @@ the build scripts — they are *not* vendored here.
 
 ## Goal
 
-One game, one executable, no ROM picker, custom icon — an APK that launches SFA3
-directly with the widescreen viewport.
+One game, one executable, custom icon — an APK that launches SFA3 directly with the
+widescreen viewport. The APK ships **everything except the ROM**: on first launch it
+asks you to pick **your own** `sfa3.zip`, copies it inside the app, then boots straight
+into the game. No ROM is redistributed.
+
+> **Legal:** Street Fighter Alpha 3 is © Capcom. This project distributes **no game
+> data** — only the modified emulator/front-end. You must provide your own legally
+> obtained `sfa3.zip` (CPS2 romset).
 
 ## Architecture
 
 ```
 FBNeo (widescreen patch in d_cps2.cpp)  --ndk-build-->  libretro.so  (the core)
                                                             │
-RetroArch Android (phoenix)  --gradlew-->  APK  <----------┘  (core + ROM + icon embedded)
+RetroArch Android (phoenix)  --gradlew-->  APK  <----------┘  (core + icon embedded, NO ROM)
                                             │
-                                   patch: auto-boot single game
+                          patch: first-run ROM import (SAF) + auto-boot single game
 ```
 
 ## Components / deltas
@@ -29,7 +35,7 @@ RetroArch Android (phoenix)  --gradlew-->  APK  <----------┘  (core + ROM + ic
 |------|------|
 | `patches/fbneo-sfa3-widescreen.patch` | FBNeo `d_cps2.cpp`: sfa3 driver 384×224 4:3 → **448×224 16:9** |
 | `patches/retroarch-android-build.patch` | RetroArch `build.gradle`: add `mavenCentral()` (jcenter is dead) |
-| `patches/retroarch-android-autoboot.patch` | RetroArch `MainMenuActivity`: auto-boot bundled core + ROM (TODO) |
+| `patches/retroarch-android-autoboot.patch` | RetroArch `MainMenuActivity`: first-run ROM import (SAF picker → copy to `filesDir/sfa3.zip`) + auto-boot single game (no bundled ROM) |
 | `scripts/build_core.ps1` | Build the FBNeo core `.so` via NDK r21e |
 | `scripts/build_apk.ps1` | Build the RetroArch APK via gradlew + JDK 11 |
 
@@ -62,19 +68,27 @@ RetroArch Android (phoenix)  --gradlew-->  APK  <----------┘  (core + ROM + ic
 
 - [x] Brick 1 — FBNeo core `.so` (arm64-v8a) builds and is validated (widescreen baked in)
 - [x] Brick 2 — RetroArch APK builds (vanilla validated end-to-end, `BUILD SUCCESSFUL`)
-- [x] Embed core (jniLib) + ROM (asset) — APK = 45 MB, arm64-v8a only
+- [x] Embed core (jniLib) — APK arm64-v8a only, **no ROM bundled**
 - [x] Auto-boot single game patch (`MainMenuActivity.finalStartup`)
-- [ ] Custom icon
-- [ ] On-device validation (auto-boot + widescreen)
+- [x] First-run ROM import via SAF picker (user provides own `sfa3.zip`)
+- [x] Custom icon
+- [ ] On-device validation (first-run import + auto-boot + widescreen)
 
-Candidate APK: `out/SFA3-Widescreen.apk`
+Distributable APK: `out/SFA3-Widescreen.apk` (publishable — contains no game data)
 
-## How it works (auto-boot)
+## How it works (first-run import + auto-boot)
 
 1. Core shipped as a **jniLib** `lib/arm64-v8a/libfbneo_libretro_android.so`
    → Android extracts it to `nativeLibraryDir` (manifest `extractNativeLibs="true"`).
-2. ROM shipped as **asset** `assets/sfa3.zip` → copied to `filesDir/sfa3.zip` on
-   first launch by `prepareBundledRom()`.
-3. `MainMenuActivity.finalStartup()` launches `RetroActivityFuture` with
-   `LIBRETRO` = the jniLib path and `ROM` = the extracted zip → boots straight
-   into the game, no picker.
+2. **No ROM is bundled.** On first launch `MainMenuActivity.finalStartup()` checks
+   `filesDir/sfa3.zip`; if absent it opens a Storage Access Framework picker
+   (`ACTION_OPEN_DOCUMENT`) asking the user for their `sfa3.zip`.
+3. `importRomFromUri()` copies the chosen file to `filesDir/sfa3.zip` (forced name —
+   FBNeo identifies the arcade set by filename) and checks the `PK\x03\x04` ZIP header.
+   FBNeo itself audits the romset on load.
+4. Once present, `finalStartup()` launches `RetroActivityFuture` with `LIBRETRO` = the
+   jniLib path and `ROM` = `filesDir/sfa3.zip` → boots straight into the game.
+   Subsequent launches skip the picker and boot directly.
+
+> **Build note:** never place a ROM in `pkg/android/phoenix/assets/` — that would bake
+> it into the APK and make the build non-distributable.

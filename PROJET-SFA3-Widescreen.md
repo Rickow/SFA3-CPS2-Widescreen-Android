@@ -165,15 +165,17 @@ Le core (`.so`) n'a besoin d'être rebuildé que si on touche à `d_cps2.cpp` :
 - [x] **APK publiables** : `out/SFA3-Widescreen.apk` + `out/SFA3-Widescreen-3-2.apk`
       (22,6 Mo chacun, **0 donnée de jeu** — vérifié)
 - [ ] Validation on-device du flux d'import + widescreen
-- [ ] Publication GitHub (remote à créer ; APK → *Release*, pas dans l'historique)
+- [x] Publication GitHub : <https://github.com/Rickow/sfa3-widescreen>
+      (public, deltas only ; APK en *Release* v1.0, pas dans l'historique)
 
 ---
 
-## 10. Publication (à venir)
+## 10. Publication (fait)
 
-- Format retenu : **dépôt de deltas** (patchs + scripts + doc) ; APK en *Release*.
-  Pas de fork du gros arbre FBNeo (inutile, le patch suffit à rebuilder).
-- `gh` (GitHub CLI) **pas installé** → créer le dépôt distant manuellement puis push.
-- Renommage possible : `sfa3-widescreen` (sans `-android`, car contient aussi le
-  patch core + l'outil d'extraction).
+- Dépôt : <https://github.com/Rickow/sfa3-widescreen> — **public**, branche `master`.
+- Format : **dépôt de deltas** (patchs + scripts + doc) ; APK en *Release* **v1.0**
+  (pas dans l'historique git). Pas de fork du gros arbre FBNeo.
+- `gh` installé en portable (`E:\tools\gh\bin\gh.exe`, v2.94) — winget échouait
+  (`NO_APPLICABLE_INSTALLER`), zip release GitHub utilisé à la place.
+- Reste : validation on-device (seule case ouverte).
 ```

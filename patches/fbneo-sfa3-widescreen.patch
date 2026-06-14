@@ -5,7 +5,7 @@ index 2a0bf1f..c11e153 100644
 @@ -11933,6 +11933,19 @@ struct BurnDriver BurnDrvCpsSfz2adl = {
  	&CpsRecalcPal, 0x1000, 384, 224, 4, 3
  };
- 
+
 +// Street Fighter Alpha 3 - build WIDESCREEN dedie (Richard).
 +// Le driver sfa3 STANDARD est passe en widescreen : on charge sfa3.zip normal
 +// (pas de renommage) et notre FBNeo l'affiche direct en widescreen. Le decor existe
@@ -29,14 +29,5 @@ index 2a0bf1f..c11e153 100644
 -	&CpsRecalcPal, 0x1000, 384, 224, 4, 3
 +	&CpsRecalcPal, 0x1000, SFA3_SCRW, 224, SFA3_ASPX, SFA3_ASPY
  };
- 
+
  struct BurnDriver BurnDrvCpsSfa3b = {
-@@ -16377,7 +16390,7 @@ struct BurnDriver BurnDrvCpsMshvsfcph = {
- };
- 
- // Pocket Fighter (Simplified Chinese plot translation, Hack)
--// Modifier by: killme(·ï»Ë)
-+// Modifier by: killme(ï¿½ï¿½ï¿½)
- // 20250528
- 
- static struct BurnRomInfo PfghtscRomDesc[] = {

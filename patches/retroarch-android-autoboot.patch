@@ -1,49 +1,143 @@
 diff --git a/pkg/android/phoenix/src/com/retroarch/browser/mainmenu/MainMenuActivity.java b/pkg/android/phoenix/src/com/retroarch/browser/mainmenu/MainMenuActivity.java
-index 35eaac8..d18df41 100644
+index 35eaac8..4385a23 100644
 --- a/pkg/android/phoenix/src/com/retroarch/browser/mainmenu/MainMenuActivity.java
 +++ b/pkg/android/phoenix/src/com/retroarch/browser/mainmenu/MainMenuActivity.java
-@@ -31,6 +31,30 @@ public final class MainMenuActivity extends PreferenceActivity
+@@ -7,11 +7,13 @@ import com.retroarch.browser.retroactivity.RetroActivityFuture;
+ import android.content.Intent;
+ import android.content.SharedPreferences;
+ import android.media.AudioManager;
++import android.net.Uri;
+ import android.os.Bundle;
+ import android.os.Environment;
+ import android.preference.PreferenceActivity;
+ import android.preference.PreferenceManager;
+ import android.provider.Settings;
++import android.widget.Toast;
+ 
+ import java.util.List;
+ import java.util.ArrayList;
+@@ -28,9 +30,105 @@ import android.util.Log;
+ public final class MainMenuActivity extends PreferenceActivity
+ {
+ 	final private int REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS = 124;
++	final private int REQUEST_CODE_PICK_ROM = 125;   // Richard: import ROM 1er lancement
  	public static String PACKAGE_NAME;
  	boolean checkPermissions = false;
  
-+	// Richard: AUTO-BOOT single game (SFA3 widescreen).
++	// Richard: AUTO-BOOT single game (SFA3 widescreen). La ROM N'EST PAS livree dans
++	// l'APK (copyright) : l'utilisateur fournit SON sfa3.zip au 1er lancement (SAF),
++	// on le copie en interne, puis on boote dessus. Le core widescreen est livre en
++	// jniLib (extrait par Android dans nativeLibraryDir).
 +	final private static String BUNDLED_CORE = "libfbneo_libretro_android.so"; // jniLib name
-+	final private static String BUNDLED_ROM  = "sfa3.zip";                      // asset name
++	final private static String ROM_NAME     = "sfa3.zip"; // nom impose (FBNeo identifie le set par ce nom)
 +
-+	// Copie la ROM bundled (assets/) vers filesDir au 1er lancement, renvoie son chemin.
-+	private String prepareBundledRom()
++	// Emplacement interne de la ROM importee.
++	private java.io.File romFile() { return new java.io.File(getFilesDir(), ROM_NAME); }
++	private boolean romReady()     { java.io.File f = romFile(); return f.exists() && f.length() > 0; }
++
++	// Ouvre le selecteur de fichiers (SAF) pour que l'utilisateur fournisse SON sfa3.zip.
++	private void launchRomPicker()
 +	{
-+		java.io.File outFile = new java.io.File(getFilesDir(), BUNDLED_ROM);
-+		if (!outFile.exists() || outFile.length() == 0) {
-+			try {
-+				java.io.InputStream in = getAssets().open(BUNDLED_ROM);
-+				java.io.OutputStream out = new java.io.FileOutputStream(outFile);
-+				byte[] buf = new byte[65536];
-+				int n;
-+				while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
-+				out.close();
-+				in.close();
-+			} catch (java.io.IOException e) {
-+				Log.e("MainMenuActivity", "Failed to extract bundled ROM", e);
-+			}
++		showMessageOKCancel(
++			"Street Fighter Alpha 3 (widescreen)\n\n" +
++			"Selectionne ton fichier ROM \"sfa3.zip\" (CPS2). Il sera copie dans " +
++			"l'application ; tu n'auras a le faire qu'une seule fois.",
++			new DialogInterface.OnClickListener() {
++				@Override public void onClick(DialogInterface dialog, int which) {
++					if (which == AlertDialog.BUTTON_POSITIVE) {
++						Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
++						i.addCategory(Intent.CATEGORY_OPENABLE);
++						i.setType("*/*"); // certains pickers ne reconnaissent pas application/zip
++						try {
++							startActivityForResult(i, REQUEST_CODE_PICK_ROM);
++						} catch (android.content.ActivityNotFoundException e) {
++							Toast.makeText(MainMenuActivity.this,
++								"Aucun selecteur de fichiers disponible.", Toast.LENGTH_LONG).show();
++							finish();
++						}
++					} else {
++						finish();
++					}
++				}
++			});
++	}
++
++	// Copie l'URI choisi vers romFile(). true si OK et entete ZIP valide.
++	private boolean importRomFromUri(Uri uri)
++	{
++		java.io.File out = romFile();
++		try {
++			java.io.InputStream in = getContentResolver().openInputStream(uri);
++			java.io.OutputStream os = new java.io.FileOutputStream(out);
++			byte[] buf = new byte[65536];
++			int n;
++			while ((n = in.read(buf)) > 0) os.write(buf, 0, n);
++			os.close();
++			in.close();
++		} catch (Exception e) {
++			Log.e("MainMenuActivity", "ROM import failed", e);
++			if (out.exists()) out.delete();
++			return false;
 +		}
-+		return outFile.getAbsolutePath();
++		// Validation legere : entete ZIP "PK\3\4". FBNeo verifiera le romset lui-meme.
++		try {
++			java.io.InputStream chk = new java.io.FileInputStream(out);
++			byte[] sig = new byte[4];
++			int r = chk.read(sig);
++			chk.close();
++			boolean isZip = (r == 4 && sig[0] == 'P' && sig[1] == 'K' && sig[2] == 3 && sig[3] == 4);
++			if (!isZip) { out.delete(); return false; }
++		} catch (Exception e) {
++			return false;
++		}
++		return true;
++	}
++
++	@Override
++	protected void onActivityResult(int requestCode, int resultCode, Intent data)
++	{
++		if (requestCode == REQUEST_CODE_PICK_ROM) {
++			if (resultCode == RESULT_OK && data != null && data.getData() != null
++					&& importRomFromUri(data.getData())) {
++				finalStartup(); // ROM prete -> boot
++			} else if (resultCode == RESULT_OK) {
++				// Fichier choisi mais invalide -> on re-propose.
++				showMessageOKCancel(
++					"Fichier invalide. Choisis un \"sfa3.zip\" valide (archive ZIP CPS2).",
++					new DialogInterface.OnClickListener() {
++						@Override public void onClick(DialogInterface d, int w) {
++							if (w == AlertDialog.BUTTON_POSITIVE) launchRomPicker(); else finish();
++						}
++					});
++			} else {
++				// Annule : impossible de demarrer sans ROM.
++				Toast.makeText(this, "ROM requise pour lancer le jeu.", Toast.LENGTH_LONG).show();
++				finish();
++			}
++			return;
++		}
++		super.onActivityResult(requestCode, resultCode, data);
 +	}
 +
  	public void showMessageOKCancel(String message, DialogInterface.OnClickListener onClickListener)
  	{
  		new AlertDialog.Builder(this).setMessage(message)
-@@ -124,12 +148,17 @@ public final class MainMenuActivity extends PreferenceActivity
+@@ -124,12 +222,22 @@ public final class MainMenuActivity extends PreferenceActivity
  		} else {
  			// RetroActivity not running - full setup with parameters
  			retro.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 -			final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 +
-+			// Richard: AUTO-BOOT single game. Notre core widescreen est livre en
-+			// jniLib (extrait par Android dans nativeLibraryDir) et la ROM est
-+			// bundled dans assets/ puis copiee dans filesDir au 1er lancement.
++			// Richard: AUTO-BOOT single game. Si la ROM n'a pas encore ete importee,
++			// on ouvre le selecteur de fichiers et on s'arrete ici : le boot se fera
++			// dans onActivityResult une fois le sfa3.zip copie en interne.
++			if (!romReady()) {
++				launchRomPicker();
++				return;
++			}
++
 +			String corePath = getApplicationInfo().nativeLibraryDir + "/" + BUNDLED_CORE;
-+			String romPath  = prepareBundledRom();
++			String romPath  = romFile().getAbsolutePath();
  
  			startRetroActivity(
  					retro,

@@ -93,3 +93,13 @@ APK distribuable : `out/SFA3-Widescreen.apk` (publiable — ne contient aucune d
 
 > **Note de build :** ne jamais placer de ROM dans `pkg/android/phoenix/assets/` — cela
 > l'intégrerait à l'APK et rendrait le build non distribuable.
+
+---
+
+## Crédits & licence
+
+Deltas sous **[GPL-3.0](LICENSE)** (les patches dérivent de RetroArch). Liste complète des
+composants, liens GitHub et licences dans **[CREDITS.md](CREDITS.md)**.
+
+⚠️ Le core CPS-2 est **FBNeo** (non commercial) → l'APK est à usage **non commercial**.
+Aucune ROM / donnée de jeu n'est distribuée (Street Fighter Alpha 3 © Capcom).

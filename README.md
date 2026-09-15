@@ -1,5 +1,7 @@
 # SFA3 Widescreen — Android APK
 
+> 🌐 **English** · [Français](README.fr.md)
+
 Standalone Android APK that boots directly into **Street Fighter Alpha 3** in
 **widescreen 16:9 (448×224)**, built on a customized FBNeo libretro core packaged
 inside RetroArch.

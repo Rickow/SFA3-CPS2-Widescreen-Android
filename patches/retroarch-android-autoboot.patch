@@ -20,11 +20,11 @@ index 35eaac8..4385a23 100644
  public final class MainMenuActivity extends PreferenceActivity
  {
  	final private int REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS = 124;
-+	final private int REQUEST_CODE_PICK_ROM = 125;   // Richard: import ROM 1er lancement
++	final private int REQUEST_CODE_PICK_ROM = 125;   // Rickow: import ROM 1er lancement
  	public static String PACKAGE_NAME;
  	boolean checkPermissions = false;
  
-+	// Richard: AUTO-BOOT single game (SFA3 widescreen). La ROM N'EST PAS livree dans
++	// Rickow: AUTO-BOOT single game (SFA3 widescreen). La ROM N'EST PAS livree dans
 +	// l'APK (copyright) : l'utilisateur fournit SON sfa3.zip au 1er lancement (SAF),
 +	// on le copie en interne, puis on boote dessus. Le core widescreen est livre en
 +	// jniLib (extrait par Android dans nativeLibraryDir).
@@ -128,7 +128,7 @@ index 35eaac8..4385a23 100644
  			retro.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 -			final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 +
-+			// Richard: AUTO-BOOT single game. Si la ROM n'a pas encore ete importee,
++			// Rickow: AUTO-BOOT single game. Si la ROM n'a pas encore ete importee,
 +			// on ouvre le selecteur de fichiers et on s'arrete ici : le boot se fera
 +			// dans onActivityResult une fois le sfa3.zip copie en interne.
 +			if (!romReady()) {

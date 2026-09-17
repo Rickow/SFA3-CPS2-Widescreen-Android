@@ -5,9 +5,9 @@ index e2493fd..a8433cf 100644
 @@ -1,5 +1,8 @@
  // Run module
  #include "burner.h"
-+extern "C" INT32 CpsDumpScroll3(const char* filename);  // Richard: dump layer
-+extern "C" INT32 CpsDumpAllLayers();                    // Richard: dump 3 layers
-+extern "C" INT32 CpsDumpStageLayers();                  // Richard: dump calques alignes RGBA
++extern "C" INT32 CpsDumpScroll3(const char* filename);  // Rickow: dump layer
++extern "C" INT32 CpsDumpAllLayers();                    // Rickow: dump 3 layers
++extern "C" INT32 CpsDumpStageLayers();                  // Rickow: dump calques alignes RGBA
  #ifdef BUILD_SDL2
  #include "sdl2_gui_common.h"
  #endif
@@ -15,12 +15,12 @@ index e2493fd..a8433cf 100644
  				case SDLK_F9:
  					QuickState(0);
  					break;
-+				case SDLK_F8: {  // Richard: dump les 3 layers en PPM
++				case SDLK_F8: {  // Rickow: dump les 3 layers en PPM
 +					INT32 r = CpsDumpAllLayers();
 +					printf("[DUMP] CpsDumpAllLayers -> scroll1/2/3_dump.ppm  ret=%d\n", r);
 +					break;
 +				}
-+				case SDLK_F7: {  // Richard: dump calques alignes (RGBA) -> stageNN_scroll1/2/3.bin
++				case SDLK_F7: {  // Rickow: dump calques alignes (RGBA) -> stageNN_scroll1/2/3.bin
 +					INT32 r = CpsDumpStageLayers();
 +					printf("[DUMP] CpsDumpStageLayers -> stageNN_scroll1/2/3.bin  ret=%d\n", r);
 +					break;

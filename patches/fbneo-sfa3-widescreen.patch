@@ -6,7 +6,7 @@ index 2a0bf1f..c11e153 100644
  	&CpsRecalcPal, 0x1000, 384, 224, 4, 3
  };
 
-+// Street Fighter Alpha 3 - build WIDESCREEN dedie (Richard).
++// Street Fighter Alpha 3 - build WIDESCREEN dedie (Rickow).
 +// Le driver sfa3 STANDARD est passe en widescreen : on charge sfa3.zip normal
 +// (pas de renommage) et notre FBNeo l'affiche direct en widescreen. Le decor existe
 +// deja dans la tilemap au-dela de 384px -> aucun patch ROM. Dimensions parametrables

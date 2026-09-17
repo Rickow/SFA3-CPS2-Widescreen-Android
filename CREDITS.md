@@ -29,3 +29,10 @@ commercial use. The resulting APK as a whole is therefore for **non-commercial**
 
 "Street Fighter" and "Capcom" are trademarks of Capcom. This project is neither affiliated
 with nor endorsed by Capcom.
+
+## Original tooling — MIT
+
+The RetroArch / FBNeo **patches** in this repository are derivative works and keep their
+upstream licenses (RetroArch **GPL-3.0**; the CPS-2 core **FBNeo / FB Alpha**, whose license
+is **non-commercial**). Our own standalone build tooling (`scripts/`) is offered under the
+**MIT License** — do whatever you want with it.

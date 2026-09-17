@@ -1,4 +1,4 @@
-// CPS tilemap layer dumper (Richard) - exporte les layers en PPM vraies couleurs
+// CPS tilemap layer dumper (Rickow) - exporte les layers en PPM vraies couleurs
 // depuis la RAM vive. Appele par touches dans le frontend.
 // Scroll1 (8x8), Scroll2 (16x16), Scroll3 (32x32). Sortie PPM -> PNG via python.
 #include "cps.h"
@@ -86,7 +86,7 @@ static INT32 DumpLayer(const char* filename, int layer)
 extern "C" INT32 CpsDumpScroll3(const char* filename) { return DumpLayer(filename, 3); }
 
 // ------------------------------------------------------------------------
-// Dump par calques ALIGNES en espace ecran, avec transparence (Richard).
+// Dump par calques ALIGNES en espace ecran, avec transparence (Rickow).
 // Chaque layer est rendu dans le MEME canevas (donc deja cale), index 0 =
 // transparent. Sortie RGBA brute : header "RGBA <W> <H>\n" puis W*H*4 octets.
 // Canevas elargi (DUMP_MARGIN_X de chaque cote) pour voir/peindre les zones 16:9.

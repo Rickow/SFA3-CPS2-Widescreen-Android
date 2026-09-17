@@ -6,7 +6,7 @@ index a30c396..c395063 100644
  		String path = getDefaultConfigPath(ctx);
  		ConfigFile config = new ConfigFile(path);
  
-+		// Richard: SFA3 Widescreen - seed des hotkeys par defaut (schema "Select modificateur").
++		// Rickow: SFA3 Widescreen - seed des hotkeys par defaut (schema "Select modificateur").
 +		// Indices RetroPad : Select=2, Y=1, L2=12, R2=13.
 +		//   Select + Y  -> ouvre le menu RetroArch
 +		//   Select + L2 -> quick save state
@@ -21,7 +21,7 @@ index a30c396..c395063 100644
 +			config.setString("input_menu_toggle_gamepad_combo", "4"); // Start+Select (fallback)
 +		}
 +
-+		// Richard: force l'aspect ratio RetroArch pour la variante (ex 3:2 = index 7).
++		// Rickow: force l'aspect ratio RetroArch pour la variante (ex 3:2 = index 7).
 +		// Applique a CHAQUE install (pas de garde) -> corrige une config existante.
 +		if (com.retroarch.BuildConfig.FORCE_ASPECT_INDEX >= 0) {
 +			config.setString("aspect_ratio_index", String.valueOf(com.retroarch.BuildConfig.FORCE_ASPECT_INDEX));
